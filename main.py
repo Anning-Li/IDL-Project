@@ -51,9 +51,9 @@ classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship'
 # Model
 print('==> Building model..')
 # net = VGG('VGG19')
-# net = ResNet18()
+net = ResNet18()
 # net = ResNet50()
-net = PreActResNet18()
+# net = PreActResNet18()
 # net = PreActResNet50()
 # net = GoogLeNet()
 # net = DenseNet121()
@@ -146,7 +146,7 @@ def test(epoch):
         }
         if not os.path.isdir('checkpoint'):
             os.mkdir('checkpoint')
-        torch.save(state, './checkpoint/preresnet18_ckpt.pth')
+        torch.save(state, './checkpoint/resnet18_ckpt.pth')
         best_acc = acc
 
 
