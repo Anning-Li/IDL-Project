@@ -1,6 +1,6 @@
 # Ignore data and checkpoint folders
 /data/
-
+/GradCAM/data/
 # Python cache and compiled files
 __pycache__/
 *.pyc
