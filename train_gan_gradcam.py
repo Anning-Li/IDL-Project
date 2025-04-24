@@ -16,8 +16,10 @@ from pytorch_grad_cam import GradCAM
 from pytorch_grad_cam.utils.model_targets import ClassifierOutputTarget
 from skimage.metrics import structural_similarity as ssim
 from scipy.stats import pearsonr
+from collections import OrderedDict
 
 from models import ResNet18, VGG
+from models import PreActResNet18
 
 
 # -------------------------------
@@ -211,34 +213,49 @@ def plot_losses(record, title):
     plt.title(f"{title} Discriminator Loss"); plt.xlabel("Epoch"); plt.ylabel("D Loss")
     plt.show()
 
+
 # -------------------------------
 # 6) Main
 # -------------------------------
 if __name__ == "__main__":
     device = torch.device("cuda")
 
-    # CIFAR10 loader
+    # ──────────────── DataLoader setup ────────────────
     transform = transforms.Compose([
         transforms.Resize(32),
         transforms.ToTensor(),
         transforms.Normalize((0.5,)*3, (0.5,)*3)
     ])
-    ds = CIFAR10(root='./data', train=True, download=True, transform=transform)
+    ds     = CIFAR10(root='./data', train=True, download=True, transform=transform)
     loader = DataLoader(ds, batch_size=128, shuffle=True, num_workers=4)
 
-    # pretrained ResNet18 checkpoint
-    # clf = resnet18(num_classes=10).to(device)
-    # base = resnet18(num_classes=10)
-    # clf = nn.DataParallel(base).to(device)
-    
-    clf = ResNet18().to(device)
+    # 1) Instantiate *your* CIFAR‐ResNet exactly, with num_classes=10
+    clf = PreActResNet18().to(device)
+
+    # 2) Load the checkpoint
+    ckpt = torch.load('./checkpoint/preresnet18_ckpt.pth', map_location=device)
+    raw_sd = ckpt['net']
+
+    # 3) Strip off any "module." prefix left by DataParallel
+    # new_sd = OrderedDict()
+    # for k, v in raw_sd.items():
+    #     name = k.replace('module.', '')     # remove the "module." 
+    #     new_sd[name] = v
+    from collections import OrderedDict
 
     ckpt = torch.load('./checkpoint/preresnet18_ckpt.pth', map_location=device)
-    clf.load_state_dict(ckpt['net'])
+    raw = ckpt['net']
+    new_sd = OrderedDict()
+    for k,v in raw.items():
+        new_sd[k.replace('module.', '')] = v
+
+    # 4) Load into your model
+    clf.load_state_dict(new_sd)
     clf.eval()
 
-    # GradCAM wrapper on layer4
-    cam = GradCAM(model=clf, target_layers=[clf.layer4], use_cuda=True)
+    # 5) Then wrap with GradCAM as before
+    cam = GradCAM(model=clf, target_layers=[clf.layer4])
+
 
     # DCGAN + GradCAM
     print("\n## DCGAN + Grad-CAM")
