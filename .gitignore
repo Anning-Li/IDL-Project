@@ -1,6 +1,8 @@
 # Ignore data and checkpoint folders
 /data/
 /GradCAM/data/
+/GradCAM/pytorch-cifar-models/
+
 # Python cache and compiled files
 __pycache__/
 *.pyc
